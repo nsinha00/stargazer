@@ -670,14 +670,14 @@ class LaTeXRenderer(Renderer):
                 text = text.replace(orig_char, escape_char)
         return text
 
-    def render(self, only_tabular=False, insert_empty_rows=False):
-        latex = self.generate_header(only_tabular=only_tabular)
-        latex += self.generate_body(insert_empty_rows=insert_empty_rows)
-        latex += self.generate_footer(only_tabular=only_tabular)
+    def render(self, only_tabular=False, insert_empty_rows=False, booktabs=False):
+        latex = self.generate_header(only_tabular=only_tabular, booktabs=booktabs)
+        latex += self.generate_body(insert_empty_rows=insert_empty_rows, booktabs=booktabs)
+        latex += self.generate_footer(only_tabular=only_tabular, booktabs=booktabs)
 
         return latex
 
-    def generate_header(self, only_tabular=False):
+    def generate_header(self, only_tabular=False, booktabs=False):
         header = ''
         if not only_tabular:
             header += '\\begin{table}[!htbp] \\centering\n'
@@ -692,8 +692,11 @@ class LaTeXRenderer(Renderer):
 
         content_columns = 'c' * self.num_models
         header += '\\begin{tabular}{@{\\extracolsep{5pt}}l' + content_columns + '}\n'
-        header += '\\\\[-1.8ex]\\hline\n'
-        header += '\\hline \\\\[-1.8ex]\n'
+        if booktabs:
+            header += '\\toprule\n'
+        else:
+            header += '\\\\[-1.8ex]\\hline\n'
+            header += '\\hline \\\\[-1.8ex]\n'
         header += self.generate_custom_lines(LineLocation.HEADER_TOP)
 
         if self.dep_var_name is not None:
@@ -720,7 +723,10 @@ class LaTeXRenderer(Renderer):
 
         header += self.generate_custom_lines(LineLocation.HEADER_BOTTOM)
 
-        header += '\\hline \\\\[-1.8ex]\n'
+        if booktabs:
+            header += '\midrule\n'
+        else:
+            header += '\\hline \\\\[-1.8ex]\n'
 
         return header
 
@@ -733,7 +739,7 @@ class LaTeXRenderer(Renderer):
     def _format_sig_icon(self, pvalue):
         return '$^{' + str(self.get_sig_icon(pvalue)) + '}$'
 
-    def generate_body(self, insert_empty_rows=False):
+    def generate_body(self, insert_empty_rows=False, booktabs=False):
         """
         Generate the body of the results where the
         covariate reporting is.
@@ -794,13 +800,16 @@ class LaTeXRenderer(Renderer):
 
         return cov_text
 
-    def generate_footer(self, only_tabular=False):
+    def generate_footer(self, only_tabular=False, booktabs=False):
         """
         Generate the footer of the table where
         model summary section is.
         """
 
-        footer = '\\hline \\\\[-1.8ex]\n'
+        if booktabs:
+            footer = '\midrule\n'
+        else:
+            footer = '\\hline \\\\[-1.8ex]\n'
 
         if not self.show_footer:
             return footer
@@ -811,7 +820,10 @@ class LaTeXRenderer(Renderer):
                 footer += self.generate_stat(stat, label)
 
         footer += self.generate_custom_lines(LineLocation.FOOTER_BOTTOM)
-        footer += '\\hline\n\\hline \\\\[-1.8ex]\n'
+        if booktabs:
+            footer += '\\bottomrule\n'
+        else:
+            footer += '\\hline\n\\hline \\\\[-1.8ex]\n'
         if self.show_notes:
             footer += self.generate_notes()
         footer += '\\end{tabular}'
