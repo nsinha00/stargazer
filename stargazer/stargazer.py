@@ -19,7 +19,7 @@ import numbers
 import pandas as pd
 
 from .label import Label
-from .starlib import _find_duplicates
+from .starlib import _find_duplicates, _group_items
 
 RESULTS_CLASSES = {}
 
@@ -96,11 +96,12 @@ class Stargazer:
 
         targets = [mod['dependent_variable'] for mod in self.model_data]
 
-        if targets.count(targets[0]) != len(targets):
-            self.dependent_variable = ''
-            self.dep_var_name = None
-        else:
-            self.dependent_variable = targets[0]
+        self.dependent_variables = targets
+        # if targets.count(targets[0]) != len(targets):
+        #     self.dependent_variable = ''
+        #     self.dep_var_name = None
+        # else:
+        #     self.dependent_variable = targets[0]
 
     def reset_params(self):
         """
@@ -228,15 +229,24 @@ class Stargazer:
         assert type(show) == bool, 'Please input True/False'
         self.confidence_intervals = show
 
-    def dependent_variable_name(self, name):
-        assert type(name) == str, 'Please input a string to use as the depedent variable name'
-        self.dependent_variable = name
+    def dependent_variable_name(self, names):
+        '''
+        Rename dependent variables
+        "names": string or list of strings that correspond to variable names
+        # TODO: change this to a mapping instead?
+        '''
+        assert isinstance(names, (str, list)), 'Please input a string or list of strings to use as the depedent variable names'
+        if type(names) == str:
+            self.dependent_variables = [names]  
+        if type(names) == list:
+            assert len(names) == len(self.dependent_variables), 'The length of the names list must match the number of models'
+            self.dependent_variables = names            
 
     def covariate_order(self, cov_names, restrict=True):
         """
         Specify order and subset of covariates.
 
-        Paramters
+        Parameters
         ---------
         cov_names : list of str
             Covariate names, or a subset of them, in the desired order.
@@ -672,7 +682,7 @@ class LaTeXRenderer(Renderer):
 
     def render(self, only_tabular=False, insert_empty_rows=False, booktabs=False):
         latex = self.generate_header(only_tabular=only_tabular, booktabs=booktabs)
-        latex += self.generate_body(insert_empty_rows=insert_empty_rows, booktabs=booktabs)
+        latex += self.generate_body(insert_empty_rows=insert_empty_rows)
         latex += self.generate_footer(only_tabular=only_tabular, booktabs=booktabs)
 
         return latex
@@ -700,10 +710,16 @@ class LaTeXRenderer(Renderer):
         header += self.generate_custom_lines(LineLocation.HEADER_TOP)
 
         if self.dep_var_name is not None:
-            header += (f'& \\multicolumn{{{self.num_models}}}{{c}}'
-                       f'{{\\textit{{{self.dep_var_name}'
-                       f'{self._escape(self.dependent_variable)}}}}} \\\n'
-                       f'\\cr \\cline{{2-{self.num_models + 1}}}\n')
+            # TODO: If more than one dep_var, add extra column. This overlaps somewhat with column_labels functionality, but is a basic-enough need to justify inclusion.
+            target_lens = _group_items(self.dependent_variables)
+            for var, i in target_lens:
+                header += f'& \\multicolumn{{{i}}}{{c}}{{{self._escape(var)}}}'
+            header += '\n'
+            # header += f'& \\multicolumn'
+            # header += (f'& \\multicolumn{{{self.num_models}}}{{c}}'
+            #            f'{{\\textit{{{self.dep_var_name}'
+            #            f'{self._escape(self.dependent_variable)}}}}} \\\n'
+            #            f'\\cr \\cline{{2-{self.num_models + 1}}}\n')
 
         if self.column_labels is not None:
             if type(self.column_labels) == str:
@@ -739,7 +755,7 @@ class LaTeXRenderer(Renderer):
     def _format_sig_icon(self, pvalue):
         return '$^{' + str(self.get_sig_icon(pvalue)) + '}$'
 
-    def generate_body(self, insert_empty_rows=False, booktabs=False):
+    def generate_body(self, insert_empty_rows=False):
         """
         Generate the body of the results where the
         covariate reporting is.

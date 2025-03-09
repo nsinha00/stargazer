@@ -2,6 +2,7 @@
 This file contains utilities that (differently from those in utils.py) are only
 meant for internal use.
 """
+from itertools import groupby
 
 def _extract_feature(obj, feature):
     """
@@ -29,3 +30,9 @@ def _find_duplicates(iterable):
         unique.add(el)
 
     return dups
+
+def _group_items(lst):
+    '''
+    Group consecutive items in a list, returning a shorter list of tuples with items and their consecutive appearances.
+    '''
+    return [(key, len(list(group))) for key, group in groupby(lst)]
