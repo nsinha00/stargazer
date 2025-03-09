@@ -124,6 +124,7 @@ class Stargazer:
         self.show_sig = True
         self.sig_levels = [0.1, 0.05, 0.01]
         self.sig_digits = 3
+        self.precision_stat = 'std_err'
         self.confidence_intervals = False
         self.show_footer = True
         self.custom_lines = defaultdict(list)
@@ -233,7 +234,7 @@ class Stargazer:
         '''
         Rename dependent variables
         "names": string or list of strings that correspond to variable names
-        # TODO: change this to a mapping instead?
+        # TODO: change this to a mapping dict instead?
         '''
         assert isinstance(names, (str, list)), 'Please input a string or list of strings to use as the depedent variable names'
         if type(names) == str:
@@ -285,6 +286,18 @@ class Stargazer:
     def reset_covariate_order(self):
         if self.original_cov_names is not None:
             self.cov_names = self.original_cov_names
+
+    def set_precision_stat(self, stat):
+        """
+        Set the reporting statistic for covariates.
+
+        Parameters
+        ----------
+        stat : str
+            The reporting statistic to use. Options are 'std_err' or 'p_values'.
+        """
+        assert stat in ['std_err', 'p_values'], 'Invalid reporting statistic. Choose from "std_err" or "p_values".'
+        self.precision_stat = stat
 
     def add_line(self, label, values, location=LineLocation.BODY_BOTTOM):
         """
@@ -564,8 +577,10 @@ class HTMLRenderer(Renderer):
                 if self.confidence_intervals:
                     cov_text += self._float_format(md['conf_int_low_values'][cov_name]) + ' , '
                     cov_text += self._float_format(md['conf_int_high_values'][cov_name])
-                else:
+                elif self.precision_stat == 'std_err':
                     cov_text += self._float_format(md['cov_std_err'][cov_name])
+                else:
+                    cov_text += self._float_format(md[self.precision_stat][cov_name])
                 cov_text += ')</td>'
             else:
                 cov_text += f'<td{spacing}></td>'
@@ -808,8 +823,10 @@ class LaTeXRenderer(Renderer):
                 if self.confidence_intervals:
                     cov_text += self._float_format(md['conf_int_low_values'][cov_name]) + ' , '
                     cov_text += self._float_format(md['conf_int_high_values'][cov_name])
-                else:
+                elif self.precision_stat == 'std_err':
                     cov_text += self._float_format(md['cov_std_err'][cov_name])
+                else:
+                    cov_text += self._float_format(md[self.precision_stat][cov_name])
                 cov_text += ') '
             else:
                 cov_text += '& '
