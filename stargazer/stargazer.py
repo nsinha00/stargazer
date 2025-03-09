@@ -113,7 +113,7 @@ class Stargazer:
         """
         self.title_text = None
         self.show_header = True
-        self.dep_var_name = 'Dependent variable: '
+        self.dep_var_name = 'Dependent variable: ' # TODO: deprecate?
         self.column_labels = None
         self.column_separators = None
         self.show_model_nums = True
@@ -230,10 +230,14 @@ class Stargazer:
         assert type(show) == bool, 'Please input True/False'
         self.confidence_intervals = show
 
-    def dependent_variable_name(self, names):
+    def dependent_variable_names(self, names):
         '''
         Rename dependent variables
-        "names": string or list of strings that correspond to variable names
+
+        Parameters
+        ----------
+            names: str or list 
+                String or list of strings that correspond to variable names
         # TODO: change this to a mapping dict instead?
         '''
         assert isinstance(names, (str, list)), 'Please input a string or list of strings to use as the depedent variable names'
@@ -482,6 +486,7 @@ class HTMLRenderer(Renderer):
         header += self.generate_custom_lines(LineLocation.HEADER_TOP)
 
         if self.dep_var_name is not None:
+            # TODO: fix
             header += '<tr><td style="text-align:left"></td><td colspan="' + str(self.num_models)
             header += '"><em>' + self.dep_var_name + self.dependent_variable + '</em></td></tr>'
 
@@ -730,11 +735,6 @@ class LaTeXRenderer(Renderer):
             for var, i in target_lens:
                 header += f'& \\multicolumn{{{i}}}{{c}}{{{self._escape(var)}}}'
             header += '\n'
-            # header += f'& \\multicolumn'
-            # header += (f'& \\multicolumn{{{self.num_models}}}{{c}}'
-            #            f'{{\\textit{{{self.dep_var_name}'
-            #            f'{self._escape(self.dependent_variable)}}}}} \\\n'
-            #            f'\\cr \\cline{{2-{self.num_models + 1}}}\n')
 
         if self.column_labels is not None:
             if type(self.column_labels) == str:
