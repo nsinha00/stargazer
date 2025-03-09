@@ -25,8 +25,9 @@ This library implements many of the customization features found in the original
 * `significance_levels`: change statistical significance thresholds
 * `significant_digits`: change number of significant digits
 * `show_confidence_intervals`: display confidence intervals instead of variance
-* `dependent_variable_name`: rename dependent variable
+* `dependent_variable_names`: rename dependent variables
 * `rename_covariates`: rename covariates
+* `set_precision_stat`: choose precision stat (default is standard error)
 * `covariate_order`: reorder covariates
 * `reset_covariate_order`: reset covariate order to original ordering
 * `show_degrees_of_freedom`: display or hide degrees of freedom
